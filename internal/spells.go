@@ -158,8 +158,7 @@ type ChummerSpell struct {
 }
 
 type ChummerSpells struct {
-	XMLName xml.Name       `xml:"spells"`
-	Spells  []ChummerSpell `xml:"spell"`
+	Spells  []ChummerSpell `xml:"spells>spell"`
 }
 
 func (s Spell) ToFoundry() FoundrySpell {
@@ -289,7 +288,7 @@ func TransformSpells(spells string) string {
 	if err != nil {
 		fmt.Println("Problem loading ", err)
 	}
-	// Something like this should work: https://github.com/PuerkitoBio/goquery/issues/338
+	// Something like this should work: https://github.com/PuerkitoBio/goquery/issues/338ll
 	document.Find(".mw-parser-output > h2").Each(func(i int, s *goquery.Selection) {
 		s.AddSelection(s.NextUntil("h2")).WrapAllHtml("<div class='spell'></div>")
 	})
@@ -310,11 +309,29 @@ func LoadSpells() []Spell {
 	return spells
 }
 
+func DownloadChummer() {
+	url := "https://raw.githubusercontent.com/chummer5a/chummer5a/master/Chummer/data/spells.xml"
+	f, err := os.Stat("./data/spells.xml")
+	if os.IsNotExist(err) || !f.IsDir() {
+		res, err := http.Get(url)
+		if err != nil {
+			fmt.Println("Could not retrieve URL: ", err)
+		}
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println("Could not read response body.", err)
+			return
+		}
+		ioutil.WriteFile("./data/spells.xml", body, 0644)
+	}
+}
+
 func LoadChummer() ChummerSpells {
+	DownloadChummer()
 	if len(chummerSpells.Spells) > 0 {
 		return chummerSpells
 	}
-	xmlFile, _ := os.Open("data/spells.xml")
+	xmlFile, _ := os.Open("./data/spells.xml")
 	defer xmlFile.Close()
 	byteValue, _ := ioutil.ReadAll(xmlFile)
 	xml.Unmarshal(byteValue, &chummerSpells)
