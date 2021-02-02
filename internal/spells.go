@@ -1,4 +1,4 @@
-package spells
+package internal
 
 import (
 	"os"
@@ -70,7 +70,7 @@ func ParseSpell(s *goquery.Selection) []Spell {
 				tmp = strings.TrimSpace(tmp)
 				split := strings.Split(tmp, ",")
 				for _, e := range split {
-					strings.TrimSpace(e)
+					e = strings.TrimSpace(e)
 					effects = append(effects, e)
 				}
 			}
@@ -167,6 +167,7 @@ func SaveSpells(spells []Spell) {
 				fmt.Println("Cloud not marshal spell to json: ", err)
 			}
 			f.Write(spj)
+			f.WriteString("\n")
 		}
 	}
 }

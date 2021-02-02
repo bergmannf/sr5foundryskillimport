@@ -2,15 +2,15 @@ package main
 
 import (
 	"flag"
-	"github.com/bergmannf/sr5foundryskillimport/internal/spells"
+	"github.com/bergmannf/sr5foundryskillimport/internal"
 )
 
 func main() {
 	download := flag.Bool("download", false, "Download the spells")
 	flag.Parse()
 	if *download {
-		DownloadAllSpells()
+		internal.DownloadAllSpells()
 	}
-	spells := LoadSpells()
-	SaveSpells(spells)
+	spells := internal.LoadSpells()
+	internal.SaveSpells(spells)
 }
