@@ -1,33 +1,166 @@
 package internal
 
 import (
-	"os"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
-	"github.com/PuerkitoBio/goquery"
 )
-
 
 const basePath = "./data/%s"
 const baseUrl = "http://adragon202.no-ip.org/Shadowrun/index.php/SR5:Spells:%s"
+
 func getSpellTypes() []string {
 	return []string{"Combat", "Detection", "Health", "Illusion", "Manipulation"}
 }
 
 type Spell struct {
-	Name string;
-	Effects []string;
-	Category string;
-	Type string;
-	Range string;
-	Damage string;
-	Duration string;
-	Drain string;
-	Description string;
-	Source string;
+	Name        string
+	Effects     []string
+	Category    string
+	Type        string
+	Range       string
+	Damage      string
+	Duration    string
+	Drain       string
+	Description string
+	Source      string
+}
+
+type Empty struct{}
+
+type FoundryDescription struct {
+	Value  string `json:"value"`
+	Chat   string `json:"chat"`
+	Source string `json:"source"`
+}
+
+type LimitData struct {
+	Value     int    `json:"value"`
+	Base      int    `json:"base"`
+	Attribute string `json:"attribute"`
+	Mod       Empty  `json:"mod"`
+}
+
+type DamageType struct {
+	Value string `json:"value"`
+	Base  string `json:"base"`
+}
+
+type DamageElement struct {
+	Value string `json:"value"`
+	Base  string `json:"base"`
+}
+
+type Ap struct {
+	Value int   `json:"value"`
+	Base  int   `json:"base"`
+	Mod   Empty `json:"mod"`
+}
+
+type DamageData struct {
+	Type      DamageType    `json:"type"`
+	Element   DamageElement `json:"element"`
+	Value     int           `json:"value"`
+	Base      int           `json:"base"`
+	Ap        Ap            `json:"ap"`
+	Attribute string        `json:"attribute"`
+	Mod       Empty         `json:"mod"`
+}
+
+type OpposedData struct {
+	Type        string `json:"type"`
+	Attribute   string `json:"attribute"`
+	Attribute2  string `json:"attribute2"`
+	Skill       string `json:"skill"`
+	Mod         int    `json:"mod"`
+	Description string `json:"description"`
+}
+
+type FoundryAction struct {
+	Type           string      `json:"type"`
+	Category       string      `json:"category"`
+	Attribute      string      `json:"attribute"`
+	Attribute2     string      `json:"attribute2"`
+	Skill          string      `json:"skill"`
+	Spec           bool        `json:"spec"`
+	Mod            int         `json:"mod"`
+	ModDescription string      `json:"mod_description"`
+	Limit          LimitData   `json:"limit"`
+	Extended       bool        `json:"extended"`
+	Damage         DamageData  `json:"damage"`
+	Opposed        OpposedData `json:"opposed"`
+	AltMod         int         `json:"alt_mod"`
+	DicePoolMod    Empty       `json:"dice_pool_mod"`
+}
+
+type CombatSpellData struct {
+	Type string `json:"type"`
+}
+
+type DetectionSpellData struct {
+	Passive  bool   `json:"passive"`
+	Type     string `json:"type"`
+	Extended bool   `json:"extended"`
+}
+
+type IllusionSpellData struct {
+	Type  string `json:"type"`
+	Sense string `json:"sense"`
+}
+
+type ManipulationSpellData struct {
+	Damaging      bool `json:"damaging"`
+	Mental        bool `json:"mental"`
+	Environmental bool `json:"environmental"`
+	Physical      bool `json:"physical"`
+}
+
+type FoundrySpellData struct {
+	Description  FoundryDescription    `json:"description"`
+	Action       FoundryAction         `json:"action"`
+	Drain        uint                  `json:"drain"`
+	Category     string                `json:"category"`
+	Type         string                `json:"type"`
+	Range        string                `json:"range"`
+	Duration     string                `json:"duration"`
+	Combat       CombatSpellData       `json:"combat"`
+	Detection    DetectionSpellData    `json:"detection"`
+	Illusion     IllusionSpellData     `json:"illusion"`
+	Manipulation ManipulationSpellData `json:"manipulation"`
+}
+
+type FoundrySpell struct {
+	Name string           `json:"name"`
+	Type string           `json:"type"`
+	Data FoundrySpellData `json:"data"`
+}
+
+type ChummerSpell struct {
+	Id         string `xml:"id"`
+	Name       string `xml:"name"`
+	Page       int    `xml:"page"`
+	Source     string `xml:"source"`
+	Category   string `xml:"category"`
+	Damage     string `xml:"damage"`
+	Descriptor string `xml:"descriptor"`
+	Duration   string `xml:"duration"`
+	Dv         string `xml:"dv"`
+	Range      string `xml:"range"`
+	Type       string `xml:"type"`
+}
+
+type ChummerSpells struct {
+    XMLName xml.Name `xml:"spells"`
+	Spells []internal.ChummerSpell `xml:"spell"`
+}
+
+func (s Spell) ToFoundry() FoundrySpell {
+	return FoundrySpell{}
 }
 
 func DownloadAllSpells() {
@@ -56,7 +189,7 @@ func DownloadSpells(category string) {
 func ParseSpell(s *goquery.Selection) []Spell {
 	spells := []Spell{}
 	description := strings.TrimSpace(s.Find("p").Text())
-	s.Find("table").Each(func(i int, table *goquery.Selection){
+	s.Find("table").Each(func(i int, table *goquery.Selection) {
 		var name, spellType, spellRange, damage, duration, drain, source string
 		var effects []string
 		sel := table.Find("th")
@@ -96,16 +229,16 @@ func ParseSpell(s *goquery.Selection) []Spell {
 				source = strings.TrimSpace(strings.Replace(text, "Source:", "", 1))
 			}
 		})
-		spell := Spell {
-			Name: name,
-			Effects: effects,
-			Type: spellType,
-			Range: spellRange,
-			Damage: damage,
+		spell := Spell{
+			Name:        name,
+			Effects:     effects,
+			Type:        spellType,
+			Range:       spellRange,
+			Damage:      damage,
 			Description: description,
-			Duration: duration,
-			Drain: drain,
-			Source: source,
+			Duration:    duration,
+			Drain:       drain,
+			Source:      source,
 		}
 		spells = append(spells, spell)
 	})
@@ -119,7 +252,7 @@ func ParseSpells(spellHtml string, category string) []Spell {
 	if err != nil {
 		fmt.Println("Problem loading ", category, err)
 	}
-	document.Find(".spell").Each(func (i int, s *goquery.Selection){
+	document.Find(".spell").Each(func(i int, s *goquery.Selection) {
 		xs := ParseSpell(s)
 		spells = append(spells, xs...)
 	})
@@ -133,7 +266,7 @@ func TransformSpells(spells string) string {
 		fmt.Println("Problem loading ", err)
 	}
 	// Something like this should work: https://github.com/PuerkitoBio/goquery/issues/338
-	document.Find(".mw-parser-output > h2").Each(func (i int, s *goquery.Selection){
+	document.Find(".mw-parser-output > h2").Each(func(i int, s *goquery.Selection) {
 		s.AddSelection(s.NextUntil("h2")).WrapAllHtml("<div class='spell'></div>")
 	})
 	html, _ := goquery.OuterHtml(document.Selection)
@@ -153,9 +286,18 @@ func LoadSpells() []Spell {
 	return spells
 }
 
+func LoadChummer() ChummerSpells {
+	var chummerSpells ChummerSpells
+	xmlFile, _ := os.Open("data/spells.xml")
+	defer xmlFile.Close()
+	byteValue, _ := ioutil.ReadAll(xmlFile)
+    xml.Unmarshal(byteValue, &chummerSpells)
+	return chummerSpells
+}
+
 func SaveSpells(spells []Spell) {
 	for _, category := range getSpellTypes() {
-		path := fmt.Sprintf(basePath, category + ".json")
+		path := fmt.Sprintf(basePath, category+".json")
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		defer f.Close()
 		if err != nil {
