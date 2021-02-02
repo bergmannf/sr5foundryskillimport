@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
@@ -13,6 +14,8 @@ import (
 
 const basePath = "./data/%s"
 const baseUrl = "http://adragon202.no-ip.org/Shadowrun/index.php/SR5:Spells:%s"
+
+var chummerSpells ChummerSpells
 
 func getSpellTypes() []string {
 	return []string{"Combat", "Detection", "Health", "Illusion", "Manipulation"}
@@ -155,12 +158,32 @@ type ChummerSpell struct {
 }
 
 type ChummerSpells struct {
-    XMLName xml.Name `xml:"spells"`
-	Spells []internal.ChummerSpell `xml:"spell"`
+	XMLName xml.Name       `xml:"spells"`
+	Spells  []ChummerSpell `xml:"spell"`
 }
 
 func (s Spell) ToFoundry() FoundrySpell {
+	_, err := FindChummerSpell(s.Name)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return FoundrySpell{}
+}
+
+func FindChummerSpell(spellname string) (ChummerSpell, error) {
+	if spellname == "DISRUPT [FOCUS]" {
+		spellname = "DISRUPT [OBJECT]"
+	} else if spellname == "CAMOUFLAGE CHECK" {
+		spellname = "CAMOUFLAGE"
+	} else if spellname == "(CRITTER) FORM" {
+		spellname = "[CRITTER] FORM"
+	}
+	for _, cs := range LoadChummer().Spells {
+		if strings.ToLower(spellname) == strings.ToLower(cs.Name) {
+			return cs, nil
+		}
+	}
+	return ChummerSpell{}, errors.New(fmt.Sprintf("could not find spell for %s", spellname))
 }
 
 func DownloadAllSpells() {
@@ -186,7 +209,7 @@ func DownloadSpells(category string) {
 
 // Parse a single section of HTML into spells.
 // Each section can contain 1+ spells with the same description.
-func ParseSpell(s *goquery.Selection) []Spell {
+func ParseSpell(s *goquery.Selection, c string) []Spell {
 	spells := []Spell{}
 	description := strings.TrimSpace(s.Find("p").Text())
 	s.Find("table").Each(func(i int, table *goquery.Selection) {
@@ -239,6 +262,7 @@ func ParseSpell(s *goquery.Selection) []Spell {
 			Duration:    duration,
 			Drain:       drain,
 			Source:      source,
+			Category:    c,
 		}
 		spells = append(spells, spell)
 	})
@@ -253,7 +277,7 @@ func ParseSpells(spellHtml string, category string) []Spell {
 		fmt.Println("Problem loading ", category, err)
 	}
 	document.Find(".spell").Each(func(i int, s *goquery.Selection) {
-		xs := ParseSpell(s)
+		xs := ParseSpell(s, category)
 		spells = append(spells, xs...)
 	})
 	return spells
@@ -287,11 +311,13 @@ func LoadSpells() []Spell {
 }
 
 func LoadChummer() ChummerSpells {
-	var chummerSpells ChummerSpells
+	if len(chummerSpells.Spells) > 0 {
+		return chummerSpells
+	}
 	xmlFile, _ := os.Open("data/spells.xml")
 	defer xmlFile.Close()
 	byteValue, _ := ioutil.ReadAll(xmlFile)
-    xml.Unmarshal(byteValue, &chummerSpells)
+	xml.Unmarshal(byteValue, &chummerSpells)
 	return chummerSpells
 }
 

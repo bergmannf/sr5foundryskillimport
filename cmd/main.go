@@ -13,4 +13,7 @@ func main() {
 	}
 	spells := internal.LoadSpells()
 	internal.SaveSpells(spells)
+	for _, sp := range spells {
+		sp.ToFoundry()
+	}
 }
