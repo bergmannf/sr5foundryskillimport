@@ -1,4 +1,4 @@
-package internal
+package spells
 import (
 	"reflect"
 	"strings"
