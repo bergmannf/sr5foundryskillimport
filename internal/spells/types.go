@@ -23,8 +23,10 @@ type Spell struct {
 	Source      string
 }
 
-func (s Spell) ToFoundry() foundry.Spell {
-	cs, err := FindChummerSpell(s.Name)
+// Converts a Spell to Foundry data.
+// Cross references Chummer data.
+func (s Spell) ToFoundry(chummerSpells chummer.Spells) foundry.Spell {
+	cs, err := FindChummerSpell(s.Name, chummerSpells)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -83,7 +85,7 @@ func (s Spell) ToFoundry() foundry.Spell {
 	}
 }
 
-func FindChummerSpell(spellname string) (chummer.Spell, error) {
+func FindChummerSpell(spellname string, chummerSpells chummer.Spells) (chummer.Spell, error) {
 	if spellname == "DISRUPT [FOCUS]" {
 		spellname = "DISRUPT [OBJECT]"
 	} else if spellname == "CAMOUFLAGE CHECK" {
@@ -91,7 +93,7 @@ func FindChummerSpell(spellname string) (chummer.Spell, error) {
 	} else if spellname == "(CRITTER) FORM" {
 		spellname = "[CRITTER] FORM"
 	}
-	for _, cs := range chummer.Load().Spells {
+	for _, cs := range chummerSpells.Spells {
 		if strings.ToLower(spellname) == strings.ToLower(cs.Name) {
 			return cs, nil
 		}
