@@ -13,18 +13,18 @@ import (
 	"log"
 )
 
-func DownloadAllSpells() {
+func DownloadAll() {
 	config := sr5foundryskillimport.GetConfig();
 	for _, category := range config.SpellTypes {
-		DownloadSpells(category)
+		Download(category)
 	}
 }
 
 // Download the HTML contain the spells of the given category
-func DownloadSpells(category string) {
+func Download(category string) {
 	log.Println("Downloading spells from wiki.")
 	config := sr5foundryskillimport.GetConfig()
-	fullUrl := fmt.Sprintf(config.StoragePath, category)
+	fullUrl := fmt.Sprintf(config.SpellDownloadUrl, category)
 	res, err := http.Get(fullUrl)
 	if err != nil {
 		log.Println("Could not retrieve URL: ", category)

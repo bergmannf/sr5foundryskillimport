@@ -104,7 +104,34 @@ type SpellData struct {
 }
 
 type Spell struct {
-	Name string           `json:"name"`
-	Type string           `json:"type"`
+	Name string    `json:"name"`
+	Type string    `json:"type"`
 	Data SpellData `json:"data"`
+}
+
+type Armor struct {
+	Value       int  `json:"value"`
+	Mod         bool `json:"mod"`
+	Acid        int  `json:"acid"`
+	Cold        int  `json:"cold"`
+	Fire        int  `json:"fire"`
+	Electricity int  `json:"electricity"`
+	Radiation   int  `json:"radiation"`
+}
+
+type CritterData struct {
+	Description Description `json:"description"`
+	Action      Action      `json:"action"`
+	Armor       Armor       `json:"armor"`
+	Category    string      `json:"category"`
+	PowerType   string      `json:"powerType"`
+	Range       string      `json:"range"`
+	Duration    string      `json:"duration"`
+	Karma       int         `json:"karma"`
+}
+
+type CritterPower struct {
+	Name string      `json:"name"`
+	Type string      `json:"type"`
+	Data CritterData `json:"data"`
 }
